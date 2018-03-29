@@ -2,7 +2,7 @@ use command::Command;
 use node::Node;
 use nodespec::NodeSpec;
 use response::Response;
-use value::{Map, ValType, Value};
+use value::{ValType, Value};
 
 pub struct Store {
     root: Node,

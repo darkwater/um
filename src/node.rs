@@ -1,5 +1,3 @@
-use command::Command;
-use response::Response;
 use value::{Map, ValType, Value};
 
 #[derive(Debug)]

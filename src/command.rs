@@ -1,9 +1,6 @@
 use nodespec::NodeSpec;
-use std::iter;
 use std::str::FromStr;
 use value::ValType;
-
-type Value = String;
 
 #[derive(Debug, PartialEq)]
 pub enum Command {
