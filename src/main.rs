@@ -1,4 +1,4 @@
-#![feature(match_default_bindings, nll, try_trait)]
+#![feature(match_default_bindings, nll, option_filter, try_trait)]
 extern crate bytes;
 #[macro_use]
 extern crate futures;

@@ -1,5 +1,6 @@
 use node::Node;
 use std::collections::HashMap;
+use std::fmt;
 use std::str::FromStr;
 
 pub type Map = HashMap<String, Node>;
@@ -45,6 +46,19 @@ impl Value {
             ValType::String  => Value::String(s.to_string()),
             ValType::Map     => return Err("can't update a map node"),
         })
+    }
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Value::Empty      => write!(fmt, "empty"),
+            Value::Boolean(b) => write!(fmt, "boolean {}", b),
+            Value::Integer(i) => write!(fmt, "integer {}", i),
+            Value::Float(f)   => write!(fmt, "float {}",   f),
+            Value::String(s)  => write!(fmt, "string :{}", s),
+            Value::Map(m)     => write!(fmt, "map {}",     m.len()),
+        }
     }
 }
 

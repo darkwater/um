@@ -48,3 +48,14 @@ impl Server {
         tokio::spawn(client);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ::std::io::prelude::*;
+    use ::std::net::TcpStream;
+
+    #[test]
+    fn commands_over_tcp() {
+    }
+}

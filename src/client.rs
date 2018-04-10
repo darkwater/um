@@ -1,9 +1,10 @@
-use futures::{Async, Future, Poll, Stream};
 use commandcodec::CommandCodec;
+use futures::{Async, Future, Poll, Stream};
+use response::Response;
 use server::Server;
 use std::sync::{Arc, Mutex};
-use tokio::net::{TcpListener, TcpStream};
 use tokio::io;
+use tokio::net::{TcpListener, TcpStream};
 
 type State = Arc<Mutex<Server>>;
 
@@ -40,14 +41,19 @@ impl Future for Client {
 
             println!("Received cmd: {:?}", cmd);
 
-            {
-                let mut state = self.state.lock().unwrap();
-                let response = state.store.execute(cmd);
-                println!("{:#?}", response);
+            match cmd {
+                Ok(cmd) => {
+                    let mut state = self.state.lock().unwrap();
+                    let response = state.store.execute(cmd);
+                    self.stream.buffer(response);
+                },
+                Err(e) => {
+                    let response = Response::Error(e);
+                    self.stream.buffer(response);
+                },
+            };
 
-                // self.stream.buffer(b"thanks");
-                let _ = self.stream.poll_flush()?;
-            }
+            self.stream.poll_flush()?;
         }
 
         // As always, it is important to not just return `NotReady`

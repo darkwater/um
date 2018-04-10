@@ -1,4 +1,5 @@
 use std::convert::{From, Into};
+use std::fmt;
 use std::ops::Try;
 use value::Value;
 
@@ -15,6 +16,16 @@ impl<'a> Response<'a> {
             true
         } else {
             false
+        }
+    }
+}
+
+impl<'a> fmt::Display for Response<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Response::Success    => write!(f, "success"),
+            Response::Value(val) => write!(f, "value {}", val),
+            Response::Error(err) => write!(f, "error :{}", err),
         }
     }
 }

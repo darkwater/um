@@ -1,6 +1,8 @@
 use bytes::{BufMut, BytesMut};
 use command::Command;
 use futures::{Async, Poll, Stream};
+use response::Response;
+use std::fmt::Write;
 use tokio::io::{self, AsyncRead, AsyncWrite};
 use tokio::net::TcpStream;
 
@@ -20,29 +22,8 @@ impl CommandCodec {
         }
     }
 
-    fn fill_read_buf(&mut self) -> Result<Async<()>, io::Error> {
-        loop {
-            // Ensure the read buffer has capacity.
-            //
-            // This might result in an internal allocation.
-            self.rd.reserve(1024);
-
-            // Read data into the buffer.
-            //
-            // The `read_buf` fn is provided by `AsyncRead`.
-            let n = try_ready!(self.socket.read_buf(&mut self.rd));
-
-            if n == 0 {
-                return Ok(Async::Ready(()));
-            }
-        }
-    }
-
-    pub fn buffer(&mut self, line: &[u8]) {
-        // Push the line onto the end of the write buffer.
-        //
-        // The `put` function is from the `BufMut` trait.
-        self.wr.put(line);
+    pub fn buffer(&mut self, response: Response) {
+        self.wr.extend_from_slice(format!("{}\n", response).as_bytes());
     }
 
     pub fn poll_flush(&mut self) -> Poll<(), io::Error> {
@@ -61,10 +42,34 @@ impl CommandCodec {
 
         Ok(Async::Ready(()))
     }
+
+    fn fill_read_buf(&mut self) -> Result<Async<()>, io::Error> {
+        loop {
+            // Ensure the read buffer has capacity.
+            //
+            // This might result in an internal allocation.
+            self.rd.reserve(1024);
+
+            // Read data into the buffer.
+            //
+           // The `read_buf` fn is provided by `AsyncRead`.
+            let n = try_ready!(self.socket.read_buf(&mut self.rd));
+
+            if n == 0 {
+                return Ok(Async::Ready(()));
+            }
+        }
+    }
+
+    fn parse_command(line: &[u8]) -> Result<Command, &'static str> {
+        let line = ::std::str::from_utf8(&line).map_err(|_| "invalid utf-8")?;
+        let cmd  = line.parse()?;
+        Ok(cmd)
+    }
 }
 
 impl Stream for CommandCodec {
-    type Item = Command;
+    type Item = Result<Command, &'static str>;
     type Error = io::Error;
 
     fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
@@ -88,11 +93,8 @@ impl Stream for CommandCodec {
             // Drop the trailing \n
             line.split_off(pos);
 
-            // Parse UTF-8
-            let line = ::std::str::from_utf8(&line).unwrap();
-
-            // Parse into a Command
-            let cmd: Command = line.parse().unwrap();
+            // Parse the bytes into a `Command`
+            let cmd = Self::parse_command(&line);
 
             // Return the line
             return Ok(Async::Ready(Some(cmd)));
